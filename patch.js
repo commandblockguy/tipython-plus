@@ -118,8 +118,9 @@ class App {
 			const rawHoleValue = view.getUint24(i * 6 + 3, true);
 			const relValue = rawHoleValue & 0x3FFFFF;
 			const base = rawHoleValue >> 22;
+			const strBase = {0: "appmain", 2: "appdata"}[base];
 			result[holeAddr] = {
-				base: base,
+				base: strBase,
 				value: relValue,
 			};
 		}
@@ -139,7 +140,8 @@ class App {
 		let i = 0;
 		for(const holeAddr in relocations) {
 			const relValue = relocations[holeAddr].value;
-			const base = relocations[holeAddr].base;
+			const strBase = relocations[holeAddr].base;
+			const base = {appmain: 0, appdata: 2}[strBase];
 			const rawValue = (base << 22) | relValue;
 			view.setUint24(i * 6, holeAddr, true);
 			view.setUint24(i * 6 + 3, rawValue, true);
@@ -199,13 +201,13 @@ class App {
 		// make a list of relocations whose targets have not yet been adjusted
 		const unrelocatedRelocations = [];
 		for(const [addr, relocation] of Object.entries(this.relocations)) {
-			if(relocation.base == 0) {
+			if(relocation.base == "appmain") {
 				unrelocatedRelocations.push(relocation);
 			}
 		}
 		for(const replacement of Object.values(patch)) {
 			for(const [addr, relocation] of Object.entries(replacement.relocations)) {
-				if(relocation.base == 0) {
+				if(relocation.base == "appmain") {
 					unrelocatedRelocations.push(relocation);
 				}
 			}
@@ -226,7 +228,9 @@ class App {
 				// Relocate relocations with values in this range
 				for(const key of Object.keys(unrelocatedRelocations)) {
 					const relocation = unrelocatedRelocations[key];
-					if(relocation.value >= currentInputAddr && relocation.value < replacement.start) {
+					if(relocation.base === "appmain" &&
+						relocation.value >= currentInputAddr &&
+						relocation.value < replacement.start) {
 						relocation.value += currentOutputAddr - currentInputAddr;
 						delete unrelocatedRelocations[key];
 					}
@@ -263,18 +267,20 @@ class App {
 			// insert this replacement
 			newMainSection.set(replacement.replacement, currentOutputAddr);
 
-			// handle relocations inside this replacement
+			// handle relocations with values inside this replacement
+			for(const key of Object.keys(unrelocatedRelocations)) {
+				const relocation = unrelocatedRelocations[key];
+				if(relocation.base === replacement.name) {
+					relocation.value += currentOutputAddr;
+					relocation.base = "appmain";
+					delete unrelocatedRelocations[key];
+				}
+			}
+
+			// handle relocations with holes inside this replacement
 			for(const relAddr of Object.keys(replacement.relocations)) {
 				const relocData = replacement.relocations[relAddr];
-				if(relocData.base == 2) {
-					// replacement-relative
-					newRelocations[Number(relAddr) + currentOutputAddr] = {
-						base: 0,
-						value: relocData.value,
-					};
-				} else {
-					newRelocations[Number(relAddr) + currentOutputAddr] = relocData;
-				}
+				newRelocations[Number(relAddr) + currentOutputAddr] = relocData;
 			}
 			currentInputAddr += replacement.end - replacement.start;
 			currentOutputAddr += replacement.replacement.byteLength;
@@ -370,7 +376,7 @@ async function getPatchedInstaller(file, patch) {
 	// todo: remove
 	window.app = app;
 	console.log(app);
-	app.patch(test);
+	app.patch(pythonPatch);
 	console.log(app);
 	console.log(app.verifyRelocations());
 	return await app.getInstallerZip();

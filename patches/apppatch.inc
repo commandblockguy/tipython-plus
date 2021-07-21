@@ -2,11 +2,13 @@ macro patch name*
 	local patch
 	db 'const ',`name,' = [',$a
 
-	macro replacement start_addr*,end_addr*,comment
+	macro replacement name*, start_addr*, end_addr*, comment
 		local replacement
 		element replacement.base
 		element app.sections.main
 		element app.sections.data
+
+		name = replacement.base
 
 		iterate base, replacement, appmain, appdata
 			virtual at 0
@@ -18,7 +20,7 @@ macro patch name*
 			db '	// ',comment,$a
 		end if
 
-		db '	{start: '
+		db '	{name: "', `name, '", start: '
 		repeat 1, d:start_addr
 			db `d
 		end repeat
@@ -34,20 +36,20 @@ macro patch name*
 			address = $
 			if value relativeto replacement.base
 				virtual replacement.relocations.replacement.area
-					dl address-replacement.base
-					dl value-replacement.base
+					emit 3,address-replacement.base
+					emit 3,value-replacement.base
 				end virtual
 				@ez80.word @size, -1
 			else if value relativeto app.sections.main
 				virtual replacement.relocations.appmain.area
-					dl address-replacement.base
-					dl value-app.sections.main
+					emit 3,address-replacement.base
+					emit 3,value-app.sections.main
 				end virtual
 				@ez80.word @size, -1
 			else if value relativeto app.sections.data
 				virtual replacement.relocations.appdata.area
-					dl address-replacement.base
-					dl value-app.sections.data
+					emit 3,address-replacement.base
+					emit 3,value-app.sections.data
 				end virtual
 				@ez80.word @size, -1
 			else
@@ -74,9 +76,9 @@ macro patch name*
 
 			db ']), relocations: {'
 
-			replacement.relocations.replacement.type = '1'
-			replacement.relocations.appmain.type = '0'
-			replacement.relocations.appdata.type = '2'
+			replacement.relocations.replacement.string = `name
+			replacement.relocations.appmain.string = 'appmain'
+			replacement.relocations.appdata.string = 'appdata'
 
 			iterate base, replacement, appmain, appdata
 				repeat replacement.relocations.base.count
@@ -84,7 +86,7 @@ macro patch name*
 					load value : 3 from replacement.relocations.base.area:6*(%-1)+3
 					repeat 1, dec_addr:addr
 						repeat 1, dec_value:value
-							db `dec_addr,': {base: ', replacement.relocations.base.type, ', value: ', `dec_value, '}, '
+							db `dec_addr,': {base: "', replacement.relocations.base.string, '", value: ', `dec_value, '}, '
 						end repeat
 					end repeat
 				end repeat

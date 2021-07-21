@@ -13,8 +13,6 @@ CXXFLAGS ?= -Wall -Wextra -Oz
 
 # ----------------------------
 
-more_all: all appvars
-
 ifndef CEDEV
 $(error CEDEV environment path variable is not set)
 endif

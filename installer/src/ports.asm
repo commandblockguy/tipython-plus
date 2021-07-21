@@ -59,6 +59,10 @@ os_table:
 _port_setup:
 	push	ix
 	di
+	ld	hl,ports_relocate
+	ld	de,ports_relocate.dest
+	ld	bc,ports_relocate.size
+	ldir
 	call    $21ED4
 	push	hl
 	pop	ix
@@ -100,6 +104,9 @@ _port_setup:
 	ld	de,port_ospre55.lock
 	jq	.store_smc
 
+ports_relocate.dest = $d09466
+
+virtual at ports_relocate.dest
 port_ospre55:
 .unlock:
 	ld	bc,$24
@@ -200,15 +207,22 @@ port_os560:
 	ret
 
 _port_unlock:
-	push	de,bc,hl
+	push	ix,de,bc,hl
 	call	0
 .code := $-3
 .pop:
-	pop	hl,bc,de
+	pop	hl,bc,de,ix
 	ret
 
 _port_lock:
-	push	de,bc,hl
+	push	ix,de,bc,hl
 	call	0
 .code := $-3
 	jq	_port_unlock.pop
+
+ports_relocate.size = $-$$
+load ports_relocate.data:ports_relocate.size from $$
+end virtual
+
+ports_relocate:
+	emit ports_relocate.size, ports_relocate.data

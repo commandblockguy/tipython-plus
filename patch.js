@@ -204,7 +204,7 @@ class App {
 			}
 		}
 		for(const replacement of Object.values(patch)) {
-			for(const [addr, relocation] of Object.entries(this.relocations)) {
+			for(const [addr, relocation] of Object.entries(replacement.relocations)) {
 				if(relocation.base == 0) {
 					unrelocatedRelocations.push(relocation);
 				}

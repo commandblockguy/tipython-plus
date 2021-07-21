@@ -180,20 +180,20 @@ class App {
 	}
 
 	patch(patch) {
-		// dummy replacement
-		patch.push({
+		// add dummy replacement
+		const replacements = [...patch, {
 			start: this.mainSection.byteLength,
 			end: this.mainSection.byteLength,
 			replacement: new Uint8Array(0),
 			relocations: {},
-		});
-		patch.sort((a, b) => {
+		}];
+		replacements.sort((a, b) => {
 			return a.start - b.start;
 		});
 
 		const oldProps = {};
 
-		const newSize = this.getNewSize(patch);
+		const newSize = this.getNewSize(replacements);
 		const newMainSection = new Uint8Array(newSize);
 		const newRelocations = {};
 		const newOffsets = {};
@@ -205,7 +205,7 @@ class App {
 				unrelocatedRelocations.push(relocation);
 			}
 		}
-		for(const replacement of Object.values(patch)) {
+		for(const replacement of Object.values(replacements)) {
 			for(const [addr, relocation] of Object.entries(replacement.relocations)) {
 				if(relocation.base == "appmain") {
 					unrelocatedRelocations.push(relocation);
@@ -216,7 +216,7 @@ class App {
 		// move from lowest address to highest, keeping track of total amount shifted by, copying into result array and adjusting relocation addresses by shift amount
 		let currentInputAddr = 0;
 		let currentOutputAddr = 0;
-		for(const replacement of patch) {
+		for(const replacement of replacements) {
 			console.log(currentInputAddr, currentOutputAddr, replacement);
 
 			// insert the section before this replacement

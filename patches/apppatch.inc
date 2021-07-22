@@ -1,14 +1,12 @@
 macro patch name*
 	local patch
+	element app.sections.main
+	element app.sections.data
 	db 'const ',`name,' = [',$a
 
 	macro replacement name*, start_addr*, end_addr*, comment
 		local replacement
 		element replacement.base
-		element app.sections.main
-		element app.sections.data
-
-		name = replacement.base
 
 		iterate base, replacement, appmain, appdata
 			virtual at 0
@@ -93,15 +91,18 @@ macro patch name*
 			end iterate
 
 			db '}},',$a
+			purge @ez80.word
 			purge end.replacement
 		end macro
 
 		virtual at replacement.base
 			replacement.data.area::
+			name:
 	end macro
 
 	macro end.patch
 		db '];',$a
+		purge replacement
 		purge end.patch
 	end macro
 end macro

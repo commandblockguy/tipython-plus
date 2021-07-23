@@ -6,10 +6,117 @@
 	<script type="text/javascript" src="jszip.js"></script>
 	<script type="text/javascript" src="installer.js"></script>
 	<script type="text/javascript" src="patches/python.js"></script>
+
+	<style>
+		body, html {
+			margin: 0;
+			font-family: "Tahoma";
+		}
+
+		#container {
+			display: flex;
+
+			width: 100vw;
+			height: 100vh;
+
+			max-width: 150vh;
+			margin: auto;
+		}
+
+		#input {
+			display: none;
+		}
+
+		#drop {
+			cursor: pointer;
+			text-align: center;
+
+			font-size: 2rem;
+
+			margin: 4%;
+			border: 12px dashed darkgray;
+			border-radius: 5em;
+			background-color: lightgray;
+
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+
+			flex: 2;
+		}
+
+		#drop:hover {
+			filter: brightness(1.05);
+		}
+
+		svg#open_icon {
+			transition: 300ms ease-in-out;
+			display: block;
+			max-width: 15vw;
+			max-height: 20vh;
+		}
+
+		#about {
+			flex: 1;
+			padding: 5px;
+		}
+
+		body.conversion-done svg#open_icon {
+			transform: rotate(180deg);
+		}
+
+		.message {
+			color: #666;
+		}
+
+		.message#save-file {
+			display: none;
+		}
+
+		body.conversion-done .message#save-file {
+			display: inline-block;
+		}
+
+		body.conversion-done .message#open-file {
+			display: none;
+		}
+
+		#disclaimer {
+			font-style: italic;
+		}
+	</style>
 </head>
 <body>
-	Insert the <a href="https://education.ti.com/en-GB/software/details/en/4C66F7E62A1846079881D7C0E372F874/Python-App">Python App</a> here:
-	<input type="file" id="input">
+	<div id="container">
+		<section id="about">
+			<span id="ie-warning"></span>
+			<script type="text/javascript">
+				if (/Trident|MSIE/.test(window.navigator.userAgent)) {
+					document.getElementById("ie-warning").innerText = "Hey!\nWe've noticed you're using Internet Explorer.\nPlease update to a more modern browser. We'll still let you try to use the site, but don't be surprised if very little works properly.";
+				}
+			</script>
+
+			<h2>Python App Patcher</h2>
+
+			<!-- todo: add info here -->
+
+			<h3>Disclaimer</h3>
+			<p id="disclaimer">This page is not affiliated with or supported by Texas Instruments in any way. Usage of the patched app is at your own risk. No data is uploaded to the cloud, all patching happens in your browser.</p>
+		</section>
+		<label for="input" id="drop">
+			<svg id="open_icon" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="darkgray" version="1.1" id="lni_lni-upload" x="0px" y="0px" viewBox="0 0 64 64" xml:space="preserve">
+				<g>
+					<path d="M61,43.4c-1,0-1.8,0.8-1.8,1.8v14.1l-54.5,0V45.1c0-1-0.8-1.8-1.8-1.8s-1.8,0.8-1.8,1.8v15c0,1.5,1.4,2.6,3.1,2.6h55.3   c1.7,0,3.1-1.2,3.1-2.6v-15C62.8,44.1,62,43.4,61,43.4z"/>
+					<path d="M23.5,13l6.7-6.9v38.9c0,1,0.8,1.8,1.8,1.8c1,0,1.8-0.8,1.8-1.8v-39l6.7,6.9c0.3,0.4,0.8,0.5,1.3,0.5   c0.4,0,0.9-0.2,1.2-0.5c0.7-0.7,0.7-1.8,0-2.5l-7.7-7.9c-0.9-0.9-2-1.4-3.2-1.4c0,0,0,0,0,0c-1.2,0-2.4,0.5-3.2,1.4L21,10.6   c-0.7,0.7-0.7,1.8,0,2.5C21.8,13.7,22.9,13.7,23.5,13z"/>
+				</g>
+			</svg>
+			<span class="message" id="open-file">Click or drop the file here to open it.</span>
+			<span class="message" id="save-file">Patch complete.<br>Click to save the patched file</span>
+		</label>
+		<input name="input" type="file" id="input" onchange="handleFile">
+	</div>
 	<script type="text/javascript" src="patch.js"></script>
+	<script type="text/javascript" src="site.js"></script>
 </body>
 </html>

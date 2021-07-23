@@ -381,13 +381,3 @@ async function getPatchedInstaller(file, patch) {
 	console.log(app.verifyRelocations());
 	return await app.getInstallerZip();
 }
-
-async function handleFiles() {
-	const fileList = this.files;
-	if(fileList.length === 1) {
-		const file = await getPatchedInstaller(fileList[0]);
-		window.location.href = URL.createObjectURL(file);
-	}
-}
-
-document.getElementById("input").addEventListener("change", handleFiles);

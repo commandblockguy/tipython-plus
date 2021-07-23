@@ -1,24 +1,39 @@
-macro patch name*
+macro patch patchname*
 	local patch
-	element app.sections.main
-	element app.sections.data
-	db 'const ',`name,' = [',$a
+	element app.main:0
+	element app.data:1
 
-	macro replacement name*, start_addr*, end_addr*, comment
+	patch.bases.0.base = app.main
+	patch.bases.1.base = app.data
+
+	patch.bases.0.string = 'appmain'
+	patch.bases.1.string = 'appdata'
+
+	patch.next_base = 2
+
+	db 'const ',`patchname,' = [',$a
+
+	macro replacement repname*, start_addr*, end_addr*, comment
 		local replacement
-		element replacement.base
+		element replacement.base: patch.next_base
 
-		iterate base, replacement, appmain, appdata
+		repeat 1, id: patch.next_base
+			patch.bases.id.base = replacement.base
+			patch.bases.id.string = `repname
+		end repeat
+		patch.next_base = patch.next_base + 1
+
+		repeat patch.total_bases, base:0
 			virtual at 0
 				replacement.relocations.base.area::
 			end virtual
-		end iterate
+		end repeat
 
 		if `comment <> ''
 			db '	// ',comment,$a
 		end if
 
-		db '	{name: "', `name, '", start: '
+		db '	{name: "', `repname, '", start: '
 		repeat 1, d:start_addr
 			db `d
 		end repeat
@@ -32,23 +47,13 @@ macro patch name*
 			local value, address
 			value = @value
 			address = $
-			if value relativeto replacement.base
-				virtual replacement.relocations.replacement.area
-					emit 3,address-replacement.base
-					emit 3,value-replacement.base
-				end virtual
-				@ez80.word @size, -1
-			else if value relativeto app.sections.main
-				virtual replacement.relocations.appmain.area
-					emit 3,address-replacement.base
-					emit 3,value-app.sections.main
-				end virtual
-				@ez80.word @size, -1
-			else if value relativeto app.sections.data
-				virtual replacement.relocations.appdata.area
-					emit 3,address-replacement.base
-					emit 3,value-app.sections.data
-				end virtual
+			if value scale 1 <> 0
+				repeat 1, id: value metadata 1
+					virtual replacement.relocations.id.area
+						emit 3,address-replacement.base
+						emit 3,value-patch.bases.id.base
+					end virtual
+				end repeat
 				@ez80.word @size, -1
 			else
 				@ez80.word @size, value
@@ -59,12 +64,6 @@ macro patch name*
 				replacement.data.size = $-$$
 			end virtual
 
-			iterate base, replacement, appmain, appdata
-				virtual replacement.relocations.base.area
-					replacement.relocations.base.count = ($-$$)/6
-				end virtual
-			end iterate
-
 			repeat replacement.data.size
 				load char : byte from replacement.data.area:replacement.base+%-1
 				repeat 1, d:char
@@ -74,21 +73,20 @@ macro patch name*
 
 			db ']), relocations: {'
 
-			replacement.relocations.replacement.string = `name
-			replacement.relocations.appmain.string = 'appmain'
-			replacement.relocations.appdata.string = 'appdata'
-
-			iterate base, replacement, appmain, appdata
+			repeat patch.total_bases, base:0
+				virtual replacement.relocations.base.area
+					replacement.relocations.base.count = ($-$$)/6
+				end virtual
 				repeat replacement.relocations.base.count
 					load addr : 3 from replacement.relocations.base.area:6*(%-1)
 					load value : 3 from replacement.relocations.base.area:6*(%-1)+3
 					repeat 1, dec_addr:addr
 						repeat 1, dec_value:value
-							db `dec_addr,': {base: "', replacement.relocations.base.string, '", value: ', `dec_value, '}, '
+							db `dec_addr,': {base: "', patch.bases.base.string, '", value: ', `dec_value, '}, '
 						end repeat
 					end repeat
 				end repeat
-			end iterate
+			end repeat
 
 			db '}},',$a
 			purge @ez80.word
@@ -97,10 +95,11 @@ macro patch name*
 
 		virtual at replacement.base
 			replacement.data.area::
-			name:
+			repname:
 	end macro
 
 	macro end.patch
+		patch.total_bases = patch.next_base - 1
 		db '];',$a
 		purge replacement
 		purge end.patch

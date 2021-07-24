@@ -201,13 +201,13 @@ class App {
 		// make a list of relocations whose targets have not yet been adjusted
 		const unrelocatedRelocations = [];
 		for(const [addr, relocation] of Object.entries(this.relocations)) {
-			if(relocation.base == "appmain") {
+			if(relocation.base != "appdata") {
 				unrelocatedRelocations.push(relocation);
 			}
 		}
 		for(const replacement of Object.values(replacements)) {
 			for(const [addr, relocation] of Object.entries(replacement.relocations)) {
-				if(relocation.base == "appmain") {
+				if(relocation.base != "appdata") {
 					unrelocatedRelocations.push(relocation);
 				}
 			}

@@ -32,7 +32,7 @@ namespace command.status
 	read_data	= 3 ; reading the data section of variable length
 end namespace
 
-patch_ram = $D1887C
+patch_ram = ti.plotSScreen
 
 virtual at patch_ram
 	command.status		rb	1
@@ -42,9 +42,8 @@ virtual at patch_ram
 	arg_buf			rb	16 ; todo: check this
 
 
-	; Don't run into the stack
-	assert $ < $D1987E
 	patch_ram.size = $ - $$
+	patch_ram.end = $
 end virtual
 
 ; ref. app main section is at $341728

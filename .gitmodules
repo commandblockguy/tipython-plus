@@ -1,0 +1,3 @@
+[submodule "patches/fasmg-ez80"]
+	path = patches/fasmg-ez80
+	url = git@github.com:jacobly0/fasmg-ez80.git

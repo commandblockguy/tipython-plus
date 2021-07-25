@@ -3,12 +3,15 @@ include 'ez80.inc'
 include 'ti84pceg.inc'
 
 version = 0
+test = 0
 
 ; Don't use ACK as a version number, so that it can be distinguished from the vanilla Python app's response
 assert	version <> 6
 
-ti.coproc_read = $222C8
-ti.coproc_write = $222CC
+if test = 0
+	ti.coproc_read = $222C8
+	ti.coproc_write = $222CC
+end if
 
 command_char = $10
 
@@ -22,7 +25,6 @@ namespace command_ids
 	mem_set		= 6
 	alloc		= 7
 	free		= 8
-	test		= 9
 end namespace
 
 namespace command.status
@@ -243,6 +245,29 @@ command_data_handlers:
 	dl	commands.alloc.on_data
 	dl	commands.free.on_data
 end replacement
+
+if test = 1
+replacement test_handler, 0, 0, 'Stats key test stuff'
+	ld	a,($F50018)
+	bit	7,a ; stat
+	jp	z,ti._indcall
+
+	scf
+	sbc	hl,hl
+	ld	(hl),2
+	ret
+
+ti.coproc_write:
+ti.coproc_read:
+	or	a,a
+	sbc	hl,hl
+	ret
+end replacement
+
+replacement test_call, $1AC4B, $1AC4F, 'Call thing for test handler'
+	call	test_handler
+end replacement
+end if
 
 replacement char_listener, $18805, $18805, "Listens for DLE characters"
 

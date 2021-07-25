@@ -42,6 +42,8 @@ virtual at patch_ram
 	command.ptr		rl	1
 	command.end		rl	1
 	arg_buf			rb	16 ; todo: check this
+	malloc.base		rb	6
+	s_sbrk.base		rl	1
 
 
 	patch_ram.size = $ - $$
@@ -58,6 +60,8 @@ replacement init, $1A999, $1A999, "Initialize the patch's RAM section"
 	ld	de,patch_ram+1
 	ld	bc,patch_ram.size - 1
 	ldir
+	ld	hl,patch_ram.end
+	ld	(s_sbrk.base),hl
 end replacement
 
 replacement dle_seq_handle_byte, 0, 0, "Handle a byte received during a DLE sequence"
@@ -244,6 +248,10 @@ command_data_handlers:
 	dl	commands.mem_set.on_data
 	dl	commands.alloc.on_data
 	dl	commands.free.on_data
+end replacement
+
+replacement malloc, 0, 0, 'malloc function'
+	include 'malloc.inc'
 end replacement
 
 if test = 1

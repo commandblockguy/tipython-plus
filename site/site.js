@@ -1,5 +1,5 @@
 async function handleFile(file) {
-	URL.createObjectURL(await getPatchedInstaller(file));
+	window.location.href = URL.createObjectURL(await getPatchedInstaller(file));
 }
 
 function handleDrop(event) {

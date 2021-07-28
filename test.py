@@ -1,48 +1,87 @@
 from sys import stdin, stdout
 
-def u24(x):
-	return chr(x & 0xff) + chr((x >> 8) & 0xff) + chr((x >> 16) & 0xff)
+def csi(c, args):
+	return "\x1B[" + ';'.join([str(x) for x in args]) + c
 
-def u24ToInt(x):
-	return ord(x[0]) | (ord(x[1]) << 8) | (ord(x[2]) << 16)
+def command(id, args):
+	stdout.write(csi('p', [id] + args))
+
+def bytesToInt(s):
+	return ord(s[0]) | (ord(s[1]) << 8) | (ord(s[2]) << 16)
+
+def intToBytes(i):
+	return chr(i & 0xff) + chr((i >> 8) & 0xff) + chr((i >> 16) & 0xff)
+
+def b64Read(size):
+	num_chunks = (size + 2) // 3
+	r = ''
+	for _ in range(num_chunks):
+		n = b64ToInt(stdin.read(4))
+		r += ''.join([chr((n >> (8*i)) & 0xff) for i in range(3)])
+	return r[:size]
+
+def b64Write(s):
+	num_chunks = (len(s) + 2) // 3
+	for x in range(num_chunks):
+		c = s[3*x:3*x+3]
+		n = bytesToInt(c + '\0' * (3 - len(c)))
+		r = ''.join([chr(((n >> (18 - 6*i)) & 0x3f) + 32) for i in range(4)])
+		stdout.write(r)
+
+def b64ToInt(s):
+	return sum([(ord(s[i]) - 32) << (18 - 6*i) for i in range(4)])
 
 def version():
-	stdout.write("\x10\x00\x03")
-	v = ord(stdin.read(1))
-	if v != 6:
-		stdin.read(1)
-	return v
+	command(0, [])
+	stdout.write("\x03")
+	s = stdin.read(1)
+	if s == '\x06':
+		return None
+	else:
+		s += stdin.read(3)
+		return b64ToInt(s)
 
 def loadlib(name, version, funcs):
-	stdout.write("\x10\x01" + name + "\0" * (8 - len(name)) + chr(version) + u24(funcs))
-	return u24ToInt(stdin.read(3))
+	data = name + '\0' * (8 - len(name)) + chr(version)
+	args = [data[x*3:x*3+3] for x in range(3)]
+	args = [bytesToInt(args[x]) for x in range(3)] + [funcs]
+	command(1, args)
+	return b64ToInt(stdin.read(4))
 
 def call(addr, args):
-	stdout.write("\x10\x02" + u24(addr) + u24(3 * len(args)))
-	for arg in args:
-		stdout.write(u24(arg))
-	return stdin.read(5)
+	command(2, [addr, 3 * len(args)])
+	b64Write(''.join([intToBytes(x) for x in args]))
+	return [b64ToInt(stdin.read(4)), b64ToInt(stdin.read(4))]
 
 def write(addr, data):
-	stdout.write("\x10\x03" + u24(addr) + u24(len(data)) + data)
+	command(3, [addr, len(data)])
+	b64Write(data)
 	stdin.read(1)
 
 def read(addr, size):
-	stdout.write("\x10\x04" + u24(addr) + u24(size))
-	return stdin.read(size)
+	command(4, [addr, size])
+	return b64Read(size)
 
 def copy(dest, addr, size):
-	stdout.write("\x10\x05" + u24(dest) + u24(addr) + u24(size))
+	command(5, [dest, addr, size])
 	stdin.read(1)
 
 def set(addr, byte, size):
-	stdout.write("\x10\x06" + u24(addr) + chr(byte) + u24(size))
+	command(6, [addr, byte, size])
 	stdin.read(1)
 
 def malloc(size):
-	stdout.write("\x10\x07" + u24(size))
-	return u24ToInt(stdin.read(3))
+	command(7, [size])
+	return b64ToInt(stdin.read(4))
 
 def free(addr):
-	stdout.write("\x10\x08" + u24(addr))
+	command(8, [addr])
 	stdin.read(1)
+
+def free_all():
+	command(9, [])
+	stdin.read(1)
+
+def test(x):
+	command(10, [size])
+	return b64ToInt(stdin.read(4))

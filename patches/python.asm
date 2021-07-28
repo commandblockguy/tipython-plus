@@ -220,6 +220,8 @@ commands.load_lib:
 	inc	hl
 	inc	hl
 	inc	de
+	inc	de
+	inc	de
 	dec	bc
 	ld	a,b
 	or	a,c

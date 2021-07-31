@@ -90,7 +90,7 @@ replacement base64_read_byte, 0, 0, "Handle an incoming base64 byte"
 	ld	(iy+10),a
 
 	sbc	hl,hl
-	lea	de,iy+11
+	lea	de,iy+14
 	ld	b,4
 .loop:
 	ld	a,(de)
@@ -101,7 +101,7 @@ repeat 6
 	rla
 	adc	hl,hl
 end repeat
-	inc	de
+	dec	de
 	djnz	.loop
 
 	ld	(iy+11),hl ; buf
@@ -436,7 +436,7 @@ commands.test:
 	jq	send_hl
 
 send_hl:
-	ld	de,base64.buf
+	ld	de,base64.buf+3
 	ld	b,4
 .loop:
 	xor	a,a
@@ -446,7 +446,7 @@ repeat 6
 end repeat
 	add	a,' '
 	ld	(de),a
-	inc	de
+	dec	de
 	djnz	.loop
 	ld	bc,4
 	push	bc

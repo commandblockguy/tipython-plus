@@ -25,11 +25,11 @@ def b64Write(s):
   for x in range(num_chunks):
     c = s[3*x:3*x+3]
     n = bytesToInt(c + '\0' * (3 - len(c)))
-    r = ''.join([chr(((n >> (18 - 6*i)) & 0x3f) + 32) for i in range(4)])
+    r = ''.join([chr(((n >> (6*i)) & 0x3f) + 32) for i in range(4)])
     stdout.write(r)
 
 def b64ToInt(s):
-  return sum([(ord(s[i]) - 32) << (18 - 6*i) for i in range(4)])
+  return sum([(ord(s[i]) - 32) << (6*i) for i in range(4)])
 
 def version():
   command(0, [])

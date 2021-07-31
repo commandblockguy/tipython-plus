@@ -1,4 +1,4 @@
-all: site/python.js site/installer.js test.8xv
+all: site/python.js site/installer.js python/eZ80.8xv python/graphxpy.8xv python/test.8xv
 
 site/python.js: patches/python.asm patches/fasmg-ez80/ti84pce.inc
 	cd patches && fasmg python.asm ../site/python.js
@@ -14,11 +14,11 @@ installer/bin/PYINST.bin: installer/src/*
 	$(MAKE) -C ./installer debug
 
 clean:
-	rm -f patches/python.js site/installer.js site/python.js test.8xv
+	rm -f patches/python.js site/installer.js site/python.js python/*.8xv
 	$(MAKE) -C ./installer clean
 
-test.8xv: test.py
-	printf "PYCD\x00" > test.bin
-	cat test.py >> test.bin
-	convbin -i test.bin -j bin -o test.8xv -k 8xv -n TEST
-	rm test.bin
+python/%.8xv: python/%.py
+	printf "PYCD\x00" > /tmp/py.bin
+	cat $< >> /tmp/py.bin
+	convbin -i /tmp/py.bin -j bin -o $@ -k 8xv -n $*
+	rm /tmp/py.bin

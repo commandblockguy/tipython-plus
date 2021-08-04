@@ -321,11 +321,14 @@ class App {
 
 	data() {
 		const relocationTable = App.genRelocationTable(this.relocations);
-		const result = new Uint8Array(this.header.byteLength +
+		const totalLength = this.header.byteLength +
 			this.info.byteLength +
 			relocationTable.byteLength +
-			this.mainSection.byteLength + 3);
+			this.mainSection.byteLength + 3;
+		const result = new Uint8Array(totalLength);
+		const view = new DataView(result.buffer);
 		result.set(this.header, 0);
+		view.setUint32(2, totalLength - 269, false);
 		result.set(this.info, this.header.byteLength);
 		result.set(relocationTable, this.header.byteLength + this.info.byteLength);
 		result.set(this.mainSection, result.byteLength - this.mainSection.byteLength - 3);

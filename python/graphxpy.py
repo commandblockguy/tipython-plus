@@ -49,13 +49,13 @@ class GfxContext:
   def print_string(self,string):
     addr = ez80.malloc(len(string))
     if not addr: return
-    ez80.write(addr,string)
+    ez80.write(addr,bytes(string,0))
     ez80.call(self.funcs+68,[addr])
     ez80.free(addr)
   def print_string_xy(self,string,x,y):
     addr = ez80.malloc(len(string))
     if not addr: return
-    ez80.write(addr,string)
+    ez80.write(addr,bytes(string,0))
     ez80.call(self.funcs+72,[addr,x,y])
     ez80.free(addr)
   def set_text_xy(self,x,y):

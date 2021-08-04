@@ -1,7 +1,7 @@
 from sys import stdin, stdout
 
 def csi(c, args):
-  return "\x1B[" + ';'.join([str(x) for x in args]) + c
+  return "\x1B[" + ';'.join(str(x) for x in args) + c
 
 def command(id, args):
   stdout.write(csi('p', [id] + args))
@@ -9,27 +9,29 @@ def command(id, args):
 def bytesToInt(s):
   return ord(s[0]) | (ord(s[1]) << 8) | (ord(s[2]) << 16)
 
-def intToBytes(i):
-  return chr(i & 0xff) + chr((i >> 8) & 0xff) + chr((i >> 16) & 0xff)
-
 def b64Read(size):
   num_chunks = (size + 2) // 3
-  r = ''
+  r = b''
   for _ in range(num_chunks):
     n = b64ToInt(stdin.read(4))
-    r += ''.join([chr((n >> (8*i)) & 0xff) for i in range(3)])
+    r += bytes((n >> (8*i)) & 0xff for i in range(3))
   return r[:size]
 
+def b64WriteInt(n):
+  b = (n & 0x3f) + ((n << 2) & 0x3f00) + ((n << 4) & 0x3f0000) + ((n << 6) & 0x3f000000) + 0x20202020
+  stdout.write(b.to_bytes(4, 'little'))
+
 def b64Write(s):
-  num_chunks = (len(s) + 2) // 3
+  v = memoryview(s)
+  num_chunks = (len(v) + 2) // 3
   for x in range(num_chunks):
-    c = s[3*x:3*x+3]
-    n = bytesToInt(c + '\0' * (3 - len(c)))
-    r = ''.join([chr(((n >> (6*i)) & 0x3f) + 32) for i in range(4)])
-    stdout.write(r)
+    c = v[3*x:3*x+3]
+    n = int.from_bytes(c, 'little')
+    b64WriteInt(n)
+    
 
 def b64ToInt(s):
-  return sum([(ord(s[i]) - 32) << (6*i) for i in range(4)])
+  return sum((ord(s[i]) - 32) << (6*i) for i in range(4))
 
 def version():
   command(0, [])
@@ -50,7 +52,8 @@ def loadlib(name, version, funcs):
 
 def call(addr, args):
   command(2, [addr, 3 * len(args)])
-  b64Write(''.join([intToBytes(x) for x in args]))
+  for x in args:
+    b64WriteInt(x)
   return [b64ToInt(stdin.read(4)), b64ToInt(stdin.read(4))]
 
 def write(addr, data):

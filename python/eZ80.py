@@ -48,12 +48,25 @@ def version():
     s += stdin.read(3)
     return b64ToInt(s)
 
-def loadlib(name, version, funcs):
-  data = name + '\0' * (8 - len(name)) + chr(version)
-  args = [data[x*3:x*3+3] for x in range(3)]
-  args = [bytesToInt(args[x]) for x in range(3)] + [funcs]
-  command(1, args)
-  return b64ToInt(stdin.read(4))
+
+class Library:
+  def __init__(self, name, version, numFuncs):
+    data = name + '\0' * (8 - len(name)) + chr(version)
+    args = [data[x*3:x*3+3] for x in range(3)]
+    args = [bytesToInt(args[x]) for x in range(3)] + [numFuncs]
+    command(1, args)
+    self.addr = b64ToInt(stdin.read(4))
+    if self.addr == 0:
+      raise OSError("Library appvar " + name + " not found")
+    self.numFuncs = numFuncs
+    self.funcs = self.addr + len(name) + 3
+
+  # todo: fix this not actually getting called
+  def __del__(self):
+    free(self.addr)
+
+  def call(self, f, retType, *args):
+    call(self.funcs + f * 4, retType, args)
 
 def call(addr, retType, args):
   command(2, [addr, retType, 3 * len(args)])

@@ -272,7 +272,7 @@ load_lib:
 	inc	hl
 	inc	hl
 	pop	de
-	ld	bc,.notfound
+	ld	bc,.notfound ; todo: figure out why this is crashing
 	push	bc
 	ld	bc,$aa55aa ; no error screen
 	jp	(hl)

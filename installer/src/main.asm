@@ -24,7 +24,8 @@ _install:
 	push	hl
 	call	$21100
 	pop	bc
-	jq	nz,.continue
+	ld	a,1 ; ALREADY_INSTALLED
+	jq	nz,.exit
 	ld	hl,$3b0000		; applications start here
 .find:
 	push	hl
@@ -41,8 +42,19 @@ _install:
 _app_size = $-3
 	or	a,a
 	sbc	hl,de
-	ex	de,hl
-	ld	(_install_loc),de
+	ld	(_install_loc),hl
+
+	xor	a,a
+	ld	h,a
+	ld	l,a
+	ld	bc,$10000
+	sbc	hl,bc
+	ld	a,(hl)
+	cp	a,$ff
+	ld	a,4 ; NO_SPACE
+	jq	nz,.exit
+
+	ld	de,(_install_loc)
 	push	de
 	ld	ix,_locations
 	ld	a,0
@@ -107,7 +119,7 @@ _code_offset = $-3
 	jr	.relocate
 .endrelocate:
 	xor	a,a
-.continue:
+.exit:
 	pop	ix
 	ret
 

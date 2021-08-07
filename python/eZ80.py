@@ -85,14 +85,14 @@ def set(addr, byte, size):
 
 def malloc(size):
   command(7, [size])
-  return b64ToInt(stdin.read(4))
+  result = b64ToInt(stdin.read(4))
+  if result == 0:
+    raise MemoryError('ez80 heap full')
+  return result
 
 def free(addr):
   command(8, [addr])
   stdin.read(1)
 
-def free_all():
-  command(9, [])
-  stdin.read(1)
-
-free_all()
+command(9, [])
+stdin.read(1)

@@ -48,13 +48,11 @@ class GfxContext:
     call(self.funcs+64,RETURN_NOBLOCK,[n, digits])
   def print_string(self,string):
     addr = malloc(len(string))
-    if not addr: return
     write(addr,bytes(string,0))
     call(self.funcs+68,RETURN_NOBLOCK,[addr])
     free(addr)
   def print_string_xy(self,string,x,y):
     addr = malloc(len(string))
-    if not addr: return
     write(addr,bytes(string,0))
     call(self.funcs+72,RETURN_NOBLOCK,[addr,x,y])
     free(addr)

@@ -4,7 +4,7 @@
 
 NAME ?= PYINST
 ICON ?= icon.png
-DESCRIPTION ?= "Python++ Installer"
+DESCRIPTION ?= "Python+ Installer"
 COMPRESSED ?= NO
 ARCHIVED ?= NO
 

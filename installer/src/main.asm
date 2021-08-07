@@ -112,7 +112,7 @@ _code_offset = $-3
 	ret
 
 app_name:
-	db	'Python',0
+	db	'Python+',0
 
 table_offset = $12a
 data_loc = $d1787c

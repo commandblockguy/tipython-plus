@@ -83,7 +83,7 @@ class App {
 		const infoLen = 0x2A;
 
 		const data = (await appFile.arrayBuffer()).slice(fileHeaderLen);
-		this.header = new Uint8Array(data, 0, headerLen);
+		this.fields = App.getFields(new Uint8Array(data, 0, headerLen));
 		this.info = new Uint8Array(data, headerLen, infoLen);
 		this.infoView = new DataView(data, headerLen, infoLen);
 
@@ -102,6 +102,71 @@ class App {
 		return this;
 	}
 
+	static getFields(data) {
+		const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+		const result = [];
+		let currPos = 0;
+		while(currPos < view.byteLength) {
+			const typeSize = view.getUint16(currPos, false);
+			currPos += 2;
+			const type = typeSize >> 4;
+			if(type == 0) continue;
+			const sizeNibble = typeSize & 0xf;
+			let size;
+			if(sizeNibble == 0xd) {
+				size = view.getUint8(currPos);
+				currPos++;
+			} else if(sizeNibble == 0xe) {
+				size = view.getUint16(currPos, false);
+				currPos += 2;
+			} else if(sizeNibble == 0xf) {
+				size = 4;
+			} else {
+				size = sizeNibble;
+			}
+			const value = getSlice(data, currPos, size);
+			result.push({type: type, value: value});
+			currPos += size;
+		}
+		return result;
+	}
+
+	static genFields(fields) {
+		const result = new Uint8Array(256);
+		const view = new DataView(result.buffer);
+		let currPos = 0;
+		for(let field of fields.slice(0,-1)) {
+			const base = currPos;
+			currPos += 2;
+			const size = field.value.byteLength;
+			let sizeNibble;
+			if(size > 0xff) {
+				sizeNibble = 0xe;
+				view.setUint16(size, currPos, false);
+				currPos += 2;
+			} else if(size > 0xc) {
+				sizeNibble = 0xd;
+				view.setUint8(size, currPos);
+				currPos += 1;
+			} else if(size == 4) {
+				sizeNibble = 0xf;
+			} else {
+				sizeNibble = size;
+			}
+			const typeSize = (field.type << 4) | sizeNibble;
+			view.setUint16(base, typeSize, false);
+			result.set(field.value, currPos);
+			currPos += size;
+		}
+		view.setUint16(currPos, 0x000d, false);
+		currPos += 2;
+		view.setUint8(256 - currPos - 7, currPos);
+
+		view.setUint16(250, 0x817f, false);
+		result.set(fields[fields.length - 1].value, 252);
+		return result;
+	}
+
 	/**
 	 * Reads the relocation table.
 	 * 
@@ -109,7 +174,7 @@ class App {
 	 * @returns A sparse array mapping hole addresses to values.
 	 */
 	static getRelocations(table) {
-		let result = {};
+		const result = {};
 		const view = new DataView(table.buffer, table.byteOffset, table.byteLength);
 		const numRelocations = table.byteLength / 6;
 		console.log(`Got ${numRelocations} relocations.`);
@@ -303,6 +368,21 @@ class App {
 		console.log("Copyright offset:", this.copyrightOffs);
 	}
 
+	setName(name) {
+		const enc = new TextEncoder();
+		const bytes = enc.encode(name);
+
+		for(const field of this.fields) {
+			if(field.type == 0x814) {
+				field.value = bytes;
+			}
+		}
+
+		const nameOffset = 3;
+		this.info.fill(0, nameOffset + bytes.byteLength, nameOffset + 9);
+		this.info.set(bytes, nameOffset);
+	}
+
 	/**
 	 * Checks if every relocation's hole contains FFFFFF.
 	 */
@@ -321,16 +401,17 @@ class App {
 
 	data() {
 		const relocationTable = App.genRelocationTable(this.relocations);
-		const totalLength = this.header.byteLength +
+		const header = App.genFields(this.fields);
+		const totalLength = header.byteLength +
 			this.info.byteLength +
 			relocationTable.byteLength +
 			this.mainSection.byteLength + 3;
 		const result = new Uint8Array(totalLength);
 		const view = new DataView(result.buffer);
-		result.set(this.header, 0);
+		result.set(header, 0);
 		view.setUint32(2, totalLength - 269, false);
-		result.set(this.info, this.header.byteLength);
-		result.set(relocationTable, this.header.byteLength + this.info.byteLength);
+		result.set(this.info, header.byteLength);
+		result.set(relocationTable, header.byteLength + this.info.byteLength);
 		result.set(this.mainSection, result.byteLength - this.mainSection.byteLength - 3);
 		new DataView(result.buffer).setUint24(result.byteLength - 3, result.byteLength - 3, true);
 		return result;
@@ -380,6 +461,7 @@ async function getPatchedInstaller(file, patch) {
 	window.app = app;
 	console.log(app);
 	app.patch(pythonPatch);
+	app.setName("Python+");
 	console.log(app);
 	console.log(app.verifyRelocations());
 	return await app.getInstallerZip();

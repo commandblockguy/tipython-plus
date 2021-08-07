@@ -1,4 +1,4 @@
-import graphxpy,ez80,sys
+import graphxpy
 
 with graphxpy.GfxContext() as gfx:
   gfx.set_draw(1)

@@ -29,11 +29,11 @@ namespace command_ids
 	test		= 10
 end namespace
 
-namespace command.status
-	non_escape	= 0 ; not in the middle of an escape code
-	await_command	= 1 ; waiting for which command to receive
-	read_args	= 2 ; reading a fixed number of bytes for the given command type
-	read_data	= 3 ; reading the data section of variable length
+namespace return_types
+	no_block	= 0
+	ack		= 1
+	a		= 2
+	hl		= 3
 end namespace
 
 patch_ram = ti.plotSScreen
@@ -49,6 +49,7 @@ virtual at patch_ram
 	s_sbrk.base			rl	1
 	sp_bkp				rl	1
 	func_ptr			rl	1
+	return_type			rb	1
 
 
 	patch_ram.size = $ - $$
@@ -282,7 +283,7 @@ load_lib:
 .appvar:
 	db	21,"LibLoad",0
 
-; address, stack length; stack contents; returns lhuea
+; address, return type, stack length; stack contents; returns lhuea
 commands.call:
 .stack_size = 2048
 	ld	iy,base64.read_active
@@ -292,12 +293,14 @@ commands.call:
 	ld	(iy+1),hl
 	ld	hl,ti.stackBot + .stack_size
 	ld	(iy+7),hl ; end
-	ld	de,(ix+3) ; size
+	ld	de,(ix+6) ; size
 	sbc	hl,de
 	ld	(iy+4),hl ; start
 	ld	(sp_bkp),hl
 	ld	hl,(ix)
 	ld	(func_ptr),hl
+	ld	a,(ix+3)
+	ld	(return_type),a
 	ld	a,d
 	or	a,e
 	jr	z,.on_data
@@ -315,11 +318,22 @@ commands.call:
 	ld	hl,(func_ptr)
 	ld	iy,ti.flags
 	call	.jp_hl
-	push	af,de
+
+	ld	c,a
+	ld	a,(return_type)
+	or	a,a
+	jq	z,.exit
+	cp	a,return_types.ack
+	jq	nz,.not_ack
+	call	send_ack
+	jq	.exit
+.not_ack:
+	cp	a,return_types.hl
+	jq	z,.hl
+	ld	l,c ; value in a
+.hl:
 	call	send_hl
-	pop	hl,af
-	ld	h,a
-	call	send_hl
+.exit:
 	ld	hl,(sp_bkp)
 	ld	sp,hl
 	ret

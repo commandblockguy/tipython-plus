@@ -1,5 +1,10 @@
 from sys import stdin, stdout
 
+RETURN_NOBLOCK = const(0)
+RETURN_NONE = const(1)
+RETURN_8 = const(2)
+RETURN_24 = const(3)
+
 def csi(c, args):
   return "\x1B[" + ';'.join(str(x) for x in args) + c
 
@@ -50,11 +55,16 @@ def loadlib(name, version, funcs):
   command(1, args)
   return b64ToInt(stdin.read(4))
 
-def call(addr, args):
-  command(2, [addr, 3 * len(args)])
+def call(addr, retType, args):
+  command(2, [addr, retType, 3 * len(args)])
   for x in args:
     b64WriteInt(x)
-  return [b64ToInt(stdin.read(4)), b64ToInt(stdin.read(4))]
+  if retType == RETURN_NONE:
+    stdin.read(1)
+  elif retType == RETURN_8:
+    return b64ToInt(stdin.read(4)) & 0xff
+  elif retType == RETURN_24:
+    return b64ToInt(stdin.read(4))
 
 def write(addr, data):
   command(3, [addr, len(data)])

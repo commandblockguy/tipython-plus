@@ -70,6 +70,10 @@ replacement init, $1A999, $1A999, "Initialize the patch's RAM section"
 	ld	(s_sbrk.base),hl
 end replacement
 
+replacement cleanup, $1AD70, $1AD70, "Clean stuff up before exiting"
+	call	free_usermem
+end replacement
+
 replacement base64_read_byte, 0, 0, "Handle an incoming base64 byte"
 	ld	e,a
 	ld	iy,base64.read_active
@@ -443,7 +447,17 @@ commands.free_all:
 	ld	(ix+3),hl
 	ld	hl,patch_ram.end
 	ld	(ix+6),hl
+	call	free_usermem
 	jq	send_ack
+
+free_usermem:
+	ld	de,(ti.asm_prgm_size)
+	ld	hl,ti.userMem
+	call	ti.DelMem
+	or	a,a
+	sbc	hl,hl
+	ld	(ti.asm_prgm_size),hl
+	ret
 
 commands.test:
 	ld	hl,(ix)

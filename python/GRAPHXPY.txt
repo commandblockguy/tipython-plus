@@ -1,0 +1,3 @@
+#MENULABEL graphxpy<%ELLIPSIS%>
+#MENUTITLE graphxpy
+#MENUITEM with graphxpy.GfxContext() as gfx:|with graphxpy.GfxContext() as gfx:

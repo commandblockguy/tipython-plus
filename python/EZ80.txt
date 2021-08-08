@@ -1,0 +1,11 @@
+#MENULABEL ez80<%ELLIPSIS%>
+#MENUTITLE ez80
+#MENUITEM version()|version()
+#MENUITEM Library(<@BLUE@>name<@BLACK@>, <@BLUE@>version<@BLACK@>, <@BLUE@>funcs<@BLACK@>)|Library(,,)|3
+#MENUITEM call(<@BLUE@>addr<@BLACK@>, <@BLUE@>args<@BLACK@>)|call(,)|2
+#MENUITEM write(<@BLUE@>addr<@BLACK@>, <@BLUE@>data<@BLACK@>)|write(,)|2
+#MENUITEM read(<@BLUE@>addr<@BLACK@>, <@BLUE@>size<@BLACK@>)|read(,)|2
+#MENUITEM copy(<@BLUE@>dest<@BLACK@>, <@BLUE@>addr<@BLACK@>, <@BLUE@>size<@BLACK@>)|copy(,,)|3
+#MENUITEM set(<@BLUE@>addr<@BLACK@>, <@BLUE@>byte<@BLACK@>, <@BLUE@>size<@BLACK@>)|set(,,)|3
+#MENUITEM malloc(<@BLUE@>size<@BLACK@>)|malloc()|1
+#MENUITEM free(<@BLUE@>addr<@BLACK@>)|free()|1

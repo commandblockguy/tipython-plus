@@ -107,5 +107,12 @@ def free(addr):
   command(8, [addr])
   stdin.read(1)
 
-command(9, [])
-stdin.read(1)
+def free_all():
+  command(9, [])
+  stdin.read(1)
+
+def run_indic(enabled):
+  command(10, [enabled])
+  stdin.read(1)
+
+free_all()

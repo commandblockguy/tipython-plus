@@ -9,3 +9,4 @@
 #MENUITEM set(<@BLUE@>addr<@BLACK@>, <@BLUE@>byte<@BLACK@>, <@BLUE@>size<@BLACK@>)|set(,,)|3
 #MENUITEM malloc(<@BLUE@>size<@BLACK@>)|malloc()|1
 #MENUITEM free(<@BLUE@>addr<@BLACK@>)|free()|1
+#MENUITEM run_indic(enabled)|run_indic()|1

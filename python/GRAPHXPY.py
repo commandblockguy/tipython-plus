@@ -1,15 +1,19 @@
 from ez80 import *
+from ti_system import disp_cursor
 
 class GfxContext:
   def __init__(self):
     self.lib = Library("GRAPHX",11,100)
   
   def __enter__(self):
+    disp_cursor(0)
+    run_indic(0)
     self.lib.call(0,RETURN_NONE) # gfx_begin
     return self
     
   def __exit__(self,t,v,tb):
     self.lib.call(1,RETURN_NONE) #gfx_end
+    run_indic(1)
     print(t,v,tb)
 
   def set_color(self,color):

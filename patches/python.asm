@@ -26,7 +26,7 @@ namespace command_ids
 	alloc		= 7
 	free		= 8
 	free_all	= 9
-	test		= 10
+	run_indic	= 10
 end namespace
 
 namespace return_types
@@ -50,6 +50,7 @@ virtual at patch_ram
 	sp_bkp				rl	1
 	func_ptr			rl	1
 	return_type			rb	1
+	run_indic_enabled		rb	1
 
 
 	patch_ram.size = $ - $$
@@ -68,6 +69,8 @@ replacement init, $1A999, $1A999, "Initialize the patch's RAM section"
 	ldir
 	ld	hl,patch_ram.end
 	ld	(s_sbrk.base),hl
+	ld	a,1
+	ld	(run_indic_enabled),a
 end replacement
 
 replacement cleanup, $1AD70, $1AD70, "Clean stuff up before exiting"
@@ -152,7 +155,7 @@ replacement commands, 0, 0, "Command handlers"
 	dl	commands.alloc
 	dl	commands.free
 	dl	commands.free_all
-	dl	commands.test
+	dl	commands.run_indic
 
 
 ; no args; returns 24-bit version number
@@ -459,9 +462,13 @@ free_usermem:
 	ld	(ti.asm_prgm_size),hl
 	ret
 
-commands.test:
-	ld	hl,(ix)
-	jq	send_hl
+commands.run_indic:
+	ld	a,(ix)
+	ld	(run_indic_enabled),a
+	or	a,a
+	ld	iy,ti.flags
+	call	z,ti.RunIndicOff
+	jq	send_ack
 
 send_hl:
 	ld	de,base64.buf+3
@@ -565,6 +572,13 @@ end replacement
 replacement csi_switch_p, $19222, $19222, "CSI end character switch-case entry for 'p'"
 	db	'p' ; for "plus" or "private" idk
 	dl	csi_p_handler
+end replacement
+
+replacement run_indicator, $172A3, $172A3, "Disable run indicator"
+	ld	a,(run_indic_enabled)
+	or	a,a
+	jr	z,.end + $18
+.end:
 end replacement
 
 end patch

@@ -44,13 +44,13 @@ class GfxContext:
   def print_uint(self,n,digits):
     self.lib.call(16,RETURN_NOBLOCK,n,digits)
   def print_string(self,string):
-    addr = malloc(len(string))
-    write(addr,bytes(string,0))
+    addr = malloc(len(string)+1)
+    write(addr,bytes(string,0)+b'\0')
     self.lib.call(17,RETURN_NOBLOCK,addr)
     free(addr)
   def print_string_xy(self,string,x,y):
-    addr = malloc(len(string))
-    write(addr,bytes(string,0))
+    addr = malloc(len(string)+1)
+    write(addr,bytes(string,0)+b'\0')
     self.lib.call(18,RETURN_NOBLOCK,addr,x,y)
     free(addr)
   def set_text_xy(self,x,y):

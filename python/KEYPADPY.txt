@@ -1,0 +1,5 @@
+#MENULABEL keypadpy<%ELLIPSIS%>
+#MENUTITLE keypadpy
+#MENUITEM get_keys()|get_keys()
+#MENUITEM any()|keys.any()
+#MENUITEM is_down()|keys.is_down(KB_)|1

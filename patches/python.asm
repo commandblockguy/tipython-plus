@@ -27,6 +27,7 @@ namespace command_ids
 	free		= 8
 	free_all	= 9
 	run_indic	= 10
+	get_keys	= 11
 end namespace
 
 namespace return_types
@@ -121,7 +122,7 @@ end repeat
 
 	ld	bc,3
 	sbc	hl,bc
-	jq	nc,.write
+	jr	nc,.write
 	add	hl,bc
 	push	hl
 	pop	bc
@@ -156,6 +157,7 @@ replacement commands, 0, 0, "Command handlers"
 	dl	commands.free
 	dl	commands.free_all
 	dl	commands.run_indic
+	dl	commands.get_keys
 
 
 ; no args; returns 24-bit version number
@@ -329,14 +331,14 @@ commands.call:
 	ld	c,a
 	ld	a,(return_type)
 	or	a,a
-	jq	z,.exit
+	jr	z,.exit
 	cp	a,return_types.ack
-	jq	nz,.not_ack
+	jr	nz,.not_ack
 	call	send_ack
-	jq	.exit
+	jr	.exit
 .not_ack:
 	cp	a,return_types.hl
-	jq	z,.hl
+	jr	z,.hl
 	ld	l,c ; value in a
 .hl:
 	call	send_hl
@@ -415,7 +417,7 @@ commands.mem_set:
 	sbc	hl,de
 	push	hl
 	pop	bc
-	jq	z,send_ack
+	jp	z,send_ack
 	ld	hl,(ix)
 	ld	de,(ix)
 	ld	a,(ix+3)
@@ -423,7 +425,7 @@ commands.mem_set:
 	inc	de
 	dec	bc
 	ldir
-	jq	send_ack
+	jp	send_ack
 
 ; size; returns address or NULL
 commands.alloc:
@@ -431,7 +433,7 @@ commands.alloc:
 	push	hl
 	call	malloc
 	pop	de
-	jq	send_hl
+	jp	send_hl
 
 ; address
 commands.free:
@@ -439,7 +441,7 @@ commands.free:
 	push	hl
 	call	free
 	pop	de
-	jq	send_ack
+	jp	send_ack
 
 ; no args
 commands.free_all:
@@ -451,7 +453,7 @@ commands.free_all:
 	ld	hl,patch_ram.end
 	ld	(ix+6),hl
 	call	free_usermem
-	jq	send_ack
+	jp	send_ack
 
 free_usermem:
 	ld	de,(ti.asm_prgm_size)
@@ -462,13 +464,48 @@ free_usermem:
 	ld	(ti.asm_prgm_size),hl
 	ret
 
+; run indicator enabled
 commands.run_indic:
 	ld	a,(ix)
 	ld	(run_indic_enabled),a
 	or	a,a
 	ld	iy,ti.flags
 	call	z,ti.RunIndicOff
-	jq	send_ack
+	jp	send_ack
+
+; no args, returns 7 bytes of kb state
+commands.get_keys:
+	; disable OS keypad scanning
+	ld	iy,ti.flags
+	set	2,(iy+$12)
+
+	ld	hl,$f50200		; DI_Mode = $f5xx00
+	ld	(hl),h
+	xor	a,a
+.scan_loop:
+	cp	a,(hl)
+	jr	nz,.scan_loop
+
+	ld	hl,$f50012
+repeat 2
+	ld	de,ti.scrapMem
+	ldi
+	inc	hl
+	ldi
+	inc	hl
+	ldi
+	inc	hl
+	push	hl
+	ld	hl,(ti.scrapMem)
+	call	send_hl
+	pop	hl
+end repeat
+	ld	l,(hl)
+	
+	; enable OS keypad scanning
+	ld	iy,ti.flags
+	res	2,(iy+$12)
+	jq	send_hl
 
 send_hl:
 	ld	de,base64.buf+3

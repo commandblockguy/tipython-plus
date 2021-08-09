@@ -1,4 +1,4 @@
-all: site/python.js site/installer.js python/EZ80.8xv python/GRAPHXPY.8xv python/test.8xv
+all: site/python.js site/installer.js python/EZ80.8xv python/GRAPHXPY.8xv python/KEYPADPY.8xv python/test.8xv
 
 site/python.js: patches/python.asm patches/fasmg-ez80/ti84pce.inc
 	cd patches && fasmg python.asm ../site/python.js

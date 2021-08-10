@@ -1,7 +1,7 @@
 import graphxpy, ez80, keypadpy
 
 with graphxpy.GfxContext() as gfx:
-  gfx.set_draw(1)
+  gfx.set_draw(graphxpy.BUFFER)
   x = 50
   y = 50
   while True:
@@ -21,4 +21,4 @@ with graphxpy.GfxContext() as gfx:
     gfx.fill_rectangle(x,y,50,12)
     gfx.set_text_xy(x,y)
     gfx.print_string("hello python")
-    gfx.blit(1)
+    gfx.blit(graphxpy.BUFFER)

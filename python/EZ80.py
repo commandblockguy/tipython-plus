@@ -5,6 +5,36 @@ RETURN_NONE = const(1)
 RETURN_8 = const(2)
 RETURN_24 = const(3)
 
+
+class Buffer:
+  def __len__(self):
+    return self.size
+
+class DynBuf(Buffer):
+  count = 0
+  def __init__(self, arg):
+    if isinstance(arg,int):
+      self.addr = malloc(arg)
+      self.size = arg
+    elif isinstance(arg,bytes):
+      self.addr = malloc(len(arg))
+      self.size = len(arg)
+      write(self.addr, arg)
+    elif isinstance(arg,str):
+      data = bytes(arg,0) + b'\0'
+      self.addr = malloc(len(data))
+      self.size = len(data)
+      write(self.addr, data)
+
+  def __enter__(self):
+    return self
+
+  def __exit__(self, t, v, tb):
+    self.free()
+
+  def free(self):
+    free(self.addr)
+
 def csi(c, args):
   return "\x1B[" + ';'.join(str(x) for x in args) + c
 
@@ -71,7 +101,11 @@ class Library:
 def call(addr, retType, args):
   command(2, [addr, retType, 3 * len(args)])
   for x in args:
-    b64WriteInt(x)
+    if isinstance(x, int):
+      b64WriteInt(x)
+    else:
+      # argument is a buffer
+      b64WriteInt(x.addr)
   if retType == RETURN_NONE:
     stdin.read(1)
   elif retType == RETURN_8:
@@ -92,7 +126,7 @@ def copy(dest, addr, size):
   command(5, [dest, addr, size])
   stdin.read(1)
 
-def set(addr, byte, size):
+def memset(addr, byte, size):
   command(6, [addr, byte, size])
   stdin.read(1)
 

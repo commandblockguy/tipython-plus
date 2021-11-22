@@ -68,8 +68,6 @@ void delete_vars() {
 }
 
 int main() {
-	ti_CloseAll();
-
 	os_SetCursorPos(0, 0);
 	os_ClrLCDFull();
 	os_PutStrFull("Installing Python+");

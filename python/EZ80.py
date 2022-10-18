@@ -10,8 +10,35 @@ class Buffer:
   def __len__(self):
     return self.size
 
+  def __getitem__(self, key):
+    if isinstance(key, int):
+      if key < 0 or key >= self.size:
+        raise IndexError
+      return int.from_bytes(read(self.addr + key, 1))
+    elif isinstance(key, slice):
+      start, end, _ = key.indices()
+      return read(self.addr + start, end - start)
+    else:
+      raise TypeError
+
+  def __getitem__(self, key, value):
+    if isinstance(key, int):
+      if key < 0 or key >= self.size:
+        raise IndexError
+      if not isinstance(value, int):
+        raise TypeError
+      write(self.addr + key, value.to_bytes(1))
+    elif isinstance(key, slice):
+      if not isinstance(value, bytes):
+        raise TypeError
+      start, end, _ = key.indices()
+      if end - start != len(value):
+        raise ValueError
+      write(self.addr + start, value)
+    else:
+      raise TypeError
+
 class DynBuf(Buffer):
-  count = 0
   def __init__(self, arg):
     if isinstance(arg,int):
       self.addr = malloc(arg)

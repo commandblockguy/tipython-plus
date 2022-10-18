@@ -1,0 +1,10 @@
+converts:
+  - name: myimages
+    palette: xlibc
+    images:
+      - mario.png
+
+outputs:
+  - type: ice
+    converts:
+      - myimages

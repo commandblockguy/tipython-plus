@@ -4,6 +4,41 @@ from ti_system import disp_cursor
 SCREEN = 0
 BUFFER = 1
 
+class SpriteAllocator:
+  def __init__(self, arg, type, lib):
+    self.arg = arg
+    self.type = type
+    self.lib = lib
+
+  def __enter__(self):
+    arg = self.arg
+    if isinstance(arg,bytes):
+      buf = DynBuf(arg)
+      w, h = arg[:2]
+    elif isinstance(arg,tuple) and len(arg) == 2:
+      w, h = arg
+      buf = DynBuf(w * h + 2)
+      buf[:2] = w, h
+    else:
+      raise ValueError
+    self.buf = buf
+    return self.type(buf, self.lib, dim=(w,h))
+
+  def __exit__(self,t,v,tb):
+    self.buf.free()
+
+class Sprite:
+  def __init__(self, buf, lib, dim=None):
+    self.buf = buf
+    self.lib = lib
+    if dim:
+      self.width, self.height = dim
+    else:
+      self.width, self.height = buf[:2]
+
+  def draw(self, x, y):
+    self.lib.call(57,RETURN_NOBLOCK,x,y)
+
 class GfxContext:
   def __init__(self):
     self.lib = Library("GRAPHX",11,100)
@@ -15,9 +50,8 @@ class GfxContext:
     return self
     
   def __exit__(self,t,v,tb):
-    self.lib.call(1,RETURN_NONE) #gfx_end
+    self.lib.call(1,RETURN_NONE) # gfx_end
     run_indic(1)
-    print(t,v,tb)
 
   def set_color(self,color):
     self.lib.call(2,RETURN_NOBLOCK,color)
@@ -207,3 +241,6 @@ class GfxContext:
 #    self.lib.call(93,RETURN_)
   def copy_rectangle(self,src,dest,src_x,src_y,dst_x,dst_y,width,height):
     self.lib.call(94,RETURN_NOBLOCK,src,dest,src_x,src_y,dst_x,dst_y,width,height)
+
+  def create_sprite(self, arg):
+    return SpriteAllocator(arg, Sprite, self.lib)
